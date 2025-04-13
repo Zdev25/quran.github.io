@@ -16,6 +16,11 @@ const toggleSurahsBtn = document.getElementById('toggleSurahsBtn');
 const reciterSelect = document.getElementById('reciter');
 const fontSizeSelect = document.getElementById('fontSize');
 const playbackSpeedSelect = document.getElementById('playbackSpeed');
+const volumeSlider = document.getElementById('volume');
+const volumeValue = document.getElementById('volumeValue');
+const tafseerModal = document.getElementById('tafseerModal');
+const tafseerText = document.getElementById('tafseerText');
+const closeTafseer = document.getElementById('closeTafseer');
 
 // متغيرات التطبيق
 let currentSurah = null;
@@ -117,26 +122,56 @@ async function loadSurah(surahNumber, savedVerseIndex = 0) {
     }
 }
 
-// عرض محتوى السورة
+// تحديث دالة عرض السورة
 async function displaySurah() {
     if (!currentSurah) return;
     
-    surahName.textContent = `${currentSurah.name} - الآية ${currentSurah.ayahs[currentVerseIndex].numberInSurah}`;
+    surahName.textContent = currentSurah.name;
     versesContainer.innerHTML = '';
     
-    const ayah = currentSurah.ayahs[currentVerseIndex];
+    // إنشاء عنصر الآية
     const verseElement = document.createElement('div');
     verseElement.className = 'verse current-verse';
     
+    // إضافة نص الآية
     const verseText = document.createElement('div');
     verseText.className = 'verse-text';
-    verseText.textContent = ayah.text;
+    verseText.innerHTML = currentSurah.ayahs[currentVerseIndex].text;
     
-    // تطبيق حجم الخط المحفوظ
-    const savedFontSize = localStorage.getItem('fontSize') || 'medium';
-    verseText.style.fontSize = getFontSize(savedFontSize);
+    // تعيين حجم الخط المتوسط
+    verseText.style.fontSize = '32px';
     
+    // إضافة معلومات الآية
+    const verseInfo = document.createElement('div');
+    verseInfo.className = 'verse-info';
+    verseInfo.innerHTML = `
+        <div class="info-item">
+            <span class="info-label">السورة:</span>
+            <span class="info-value">${currentSurah.name}</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">رقم الآية:</span>
+            <span class="info-value">${currentSurah.ayahs[currentVerseIndex].numberInSurah}</span>
+        </div>
+        <div class="info-item">
+            <span class="info-label">الجزء:</span>
+            <span class="info-value">${Math.ceil(currentSurah.ayahs[currentVerseIndex].number / 20)}</span>
+        </div>
+    `;
+    
+    // إضافة زر التفسير
+    const tafseerButton = document.createElement('button');
+    tafseerButton.className = 'tafseer-icon-btn';
+    tafseerButton.innerHTML = '<i class="fas fa-question-circle"></i>';
+    tafseerButton.title = 'عرض تفسير الآية';
+    tafseerButton.addEventListener('click', () => {
+        showTafseer(currentSurah.ayahs[currentVerseIndex].number);
+    });
+    
+    // تجميع العناصر
+    verseElement.appendChild(tafseerButton);
     verseElement.appendChild(verseText);
+    verseElement.appendChild(verseInfo);
     versesContainer.appendChild(verseElement);
     
     // حفظ الموقع الحالي
@@ -155,6 +190,10 @@ async function playCurrentVerse() {
     // تطبيق سرعة التشغيل المحفوظة
     const savedSpeed = localStorage.getItem('playbackSpeed') || '1';
     audio.playbackRate = parseFloat(savedSpeed);
+    
+    // تطبيق مستوى الصوت المحفوظ
+    const savedVolume = localStorage.getItem('volume') || '100';
+    audio.volume = parseInt(savedVolume) / 100;
     
     try {
         await audio.play();
@@ -282,10 +321,6 @@ function updateSettings() {
     // إيقاف الصوت عند فتح الإعدادات
     stopAllAudio();
     
-    // تحديث حجم الخط
-    const newFontSize = fontSizeSelect.value;
-    applyFontSize(newFontSize);
-    
     // تحديث القارئ
     const reciterId = reciterSelect.value;
     currentReciter = RECITERS[reciterId] || 'ar.alafasy';
@@ -295,45 +330,17 @@ function updateSettings() {
     const playbackSpeed = playbackSpeedSelect.value;
     localStorage.setItem('playbackSpeed', playbackSpeed);
     
+    // تحديث مستوى الصوت
+    const volume = volumeSlider.value;
+    localStorage.setItem('volume', volume);
     if (audio) {
-        audio.playbackRate = parseFloat(playbackSpeed);
+        audio.volume = volume / 100;
     }
     
     // إعادة تحميل السورة مع الحفاظ على الموضع الحالي
     if (currentSurah) {
         loadSurah(currentSurah.number, currentVerseIndex);
     }
-}
-
-// تطبيق حجم الخط
-function applyFontSize(size) {
-    const verses = document.querySelectorAll('.verse-text');
-    if (!verses.length) return;
-    
-    let fontSize;
-    switch(size) {
-        case 'small':
-            fontSize = '8vw';
-            break;
-        case 'medium':
-            fontSize = '11vw';
-            break;
-        case 'large':
-            fontSize = '14vw';
-            break;
-        case 'xlarge':
-            fontSize = '17vw';
-            break;
-        default:
-            fontSize = '11vw';
-    }
-    
-    verses.forEach(verse => {
-        verse.style.fontSize = fontSize;
-    });
-    
-    // حفظ الإعداد في localStorage
-    localStorage.setItem('fontSize', size);
 }
 
 // حفظ الموقع الحالي
@@ -356,7 +363,7 @@ async function loadLastPosition() {
         // استرجاع الإعدادات
         const savedReciter = localStorage.getItem('reciter') || 'alafasy';
         const savedSpeed = localStorage.getItem('playbackSpeed') || '1';
-        const savedFontSize = localStorage.getItem('fontSize') || 'medium';
+        const savedVolume = localStorage.getItem('volume') || '100';
         
         // تطبيق القارئ المحفوظ
         if (savedReciter) {
@@ -369,10 +376,13 @@ async function loadLastPosition() {
             playbackSpeedSelect.value = savedSpeed;
         }
         
-        // تطبيق حجم الخط المحفوظ
-        if (savedFontSize) {
-            fontSizeSelect.value = savedFontSize;
-            applyFontSize(savedFontSize);
+        // تطبيق مستوى الصوت المحفوظ
+        if (savedVolume) {
+            volumeSlider.value = savedVolume;
+            volumeValue.textContent = `${savedVolume}%`;
+            if (audio) {
+                audio.volume = savedVolume / 100;
+            }
         }
         
         // استرجاع الموقع المحفوظ
@@ -397,12 +407,7 @@ function updateVersePosition() {
 
 // إضافة مستمعي الأحداث
 document.addEventListener('DOMContentLoaded', () => {
-    // مستمع تغيير حجم الخط
-    fontSizeSelect.addEventListener('change', () => {
-        applyFontSize(fontSizeSelect.value);
-    });
-    
-    // مستمعي الأحداث الأخرى
+    // مستمعي الأحداث
     reciterSelect.addEventListener('change', updateSettings);
     playbackSpeedSelect.addEventListener('change', updateSettings);
     
@@ -446,6 +451,10 @@ async function playVerse(verseNumber, speed = 'normal') {
         if (data.code === 200) {
             currentAudio = new Audio(data.data.audio);
             
+            // تطبيق مستوى الصوت المحفوظ
+            const savedVolume = localStorage.getItem('volume') || '100';
+            currentAudio.volume = parseInt(savedVolume) / 100;
+            
             // ضبط سرعة التشغيل
             if (speed === 'slow') {
                 currentAudio.playbackRate = 0.75;
@@ -475,6 +484,11 @@ function playWord(wordAudioUrl) {
         }
         
         currentAudio = new Audio(wordAudioUrl);
+        
+        // تطبيق مستوى الصوت المحفوظ
+        const savedVolume = localStorage.getItem('volume') || '100';
+        currentAudio.volume = parseInt(savedVolume) / 100;
+        
         currentAudio.play();
     } catch (error) {
         console.error('Error playing word:', error);
@@ -487,4 +501,95 @@ function stopAudio() {
         currentAudio.currentTime = 0;
         currentAudio = null;
     }
+}
+
+// إضافة مستمع حدث لتغيير مستوى الصوت
+volumeSlider.addEventListener('input', (e) => {
+    const volume = e.target.value;
+    volumeValue.textContent = `${volume}%`;
+    if (audio) {
+        audio.volume = volume / 100;
+    }
+    localStorage.setItem('volume', volume);
+});
+
+// إغلاق نافذة التفسير
+closeTafseer.addEventListener('click', () => {
+    tafseerModal.style.display = 'none';
+});
+
+// دالة عرض التفسير
+async function showTafseer(verseKey) {
+    try {
+        const response = await fetch(`https://api.alquran.cloud/v1/ayah/${verseKey}/ar.muyassar`);
+        const data = await response.json();
+        if (data.code === 200 && data.data) {
+            const tafseer = data.data.text || 'التفسير غير متوفر';
+            tafseerText.innerHTML = tafseer;
+            tafseerModal.style.display = 'block';
+        } else {
+            tafseerText.innerHTML = 'التفسير غير متوفر';
+            tafseerModal.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error fetching tafseer:', error);
+        tafseerText.innerHTML = 'عذراً، حدث خطأ في تحميل التفسير';
+        tafseerModal.style.display = 'block';
+    }
+}
+
+// تحديث دالة عرض الآيات لإضافة زر التفسير
+function displayVerses(verses) {
+    versesContainer.innerHTML = '';
+    verses.forEach((verse, index) => {
+        const verseElement = document.createElement('div');
+        verseElement.className = 'verse';
+        verseElement.innerHTML = `
+            <div class="verse-text">${verse.text}</div>
+            <div class="verse-controls">
+                <button class="verse-btn play-verse">
+                    <i class="fas fa-play"></i>
+                    تشغيل
+                </button>
+                <button class="verse-btn tafseer">
+                    <i class="fas fa-book"></i>
+                    تفسير
+                </button>
+            </div>
+        `;
+
+        const playButton = verseElement.querySelector('.play-verse');
+        const tafseerButton = verseElement.querySelector('.verse-btn.tafseer');
+
+        playButton.addEventListener('click', () => {
+            playVerse(verse.number);
+        });
+
+        tafseerButton.addEventListener('click', () => {
+            showTafseer(verse.number);
+        });
+
+        versesContainer.appendChild(verseElement);
+    });
+}
+
+// تحديث دالة تحميل الإعدادات
+function loadSettings() {
+    const settings = JSON.parse(localStorage.getItem('quranSettings')) || {};
+    selectedReciter = settings.reciter || 'ar.alafasy';
+    document.getElementById('reciter').value = selectedReciter;
+    
+    const volume = settings.volume || 100;
+    volumeSlider.value = volume;
+    volumeValue.textContent = `${volume}%`;
+    audio.volume = volume / 100;
+}
+
+// تحديث دالة حفظ الإعدادات
+function saveSettings() {
+    const settings = {
+        reciter: selectedReciter,
+        volume: volumeSlider.value
+    };
+    localStorage.setItem('quranSettings', JSON.stringify(settings));
 } 
