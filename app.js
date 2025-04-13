@@ -21,6 +21,10 @@ const volumeValue = document.getElementById('volumeValue');
 const tafseerModal = document.getElementById('tafseerModal');
 const tafseerText = document.getElementById('tafseerText');
 const closeTafseer = document.getElementById('closeTafseer');
+const darkModeBtn = document.getElementById('darkModeBtn');
+const searchInput = document.getElementById('searchInput');
+const searchBtn = document.getElementById('searchBtn');
+const searchResults = document.getElementById('searchResults');
 
 // متغيرات التطبيق
 let currentSurah = null;
@@ -413,6 +417,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // تحميل الإعدادات المحفوظة
     loadLastPosition();
+    initDarkMode();
 });
 
 // حفظ الموقع قبل إغلاق الصفحة
@@ -592,4 +597,87 @@ function saveSettings() {
         volume: volumeSlider.value
     };
     localStorage.setItem('quranSettings', JSON.stringify(settings));
-} 
+}
+
+// تهيئة الوضع الليلي
+function initDarkMode() {
+    const isDarkMode = localStorage.getItem('darkMode') === 'true';
+    if (isDarkMode) {
+        document.body.classList.add('dark-mode');
+        darkModeBtn.innerHTML = '<i class="fas fa-sun"></i>';
+    }
+}
+
+// تبديل الوضع الليلي
+darkModeBtn.addEventListener('click', () => {
+    document.body.classList.toggle('dark-mode');
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    localStorage.setItem('darkMode', isDarkMode);
+    darkModeBtn.innerHTML = isDarkMode ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+});
+
+// وظيفة البحث
+async function searchQuran(query) {
+    if (!query.trim()) {
+        searchResults.classList.remove('active');
+        return;
+    }
+
+    try {
+        const response = await fetch(`https://api.alquran.cloud/v1/search/${encodeURIComponent(query)}/all/ar`);
+        const data = await response.json();
+
+        if (data.code === 200 && data.data.matches.length > 0) {
+            displaySearchResults(data.data.matches);
+        } else {
+            searchResults.innerHTML = '<div class="search-result-item">لا توجد نتائج</div>';
+        }
+        searchResults.classList.add('active');
+    } catch (error) {
+        console.error('خطأ في البحث:', error);
+        searchResults.innerHTML = '<div class="search-result-item">حدث خطأ في البحث</div>';
+    }
+}
+
+// عرض نتائج البحث
+function displaySearchResults(matches) {
+    searchResults.innerHTML = matches.slice(0, 10).map(match => `
+        <div class="search-result-item" data-surah="${match.surah.number}" data-verse="${match.numberInSurah}">
+            <div class="surah-name">${match.surah.name} - الآية ${match.numberInSurah}</div>
+            <div class="verse-text">${match.text}</div>
+        </div>
+    `).join('');
+
+    // إضافة مستمع الأحداث لنتائج البحث
+    document.querySelectorAll('.search-result-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const surahNumber = parseInt(item.dataset.surah);
+            const verseNumber = parseInt(item.dataset.verse);
+            loadSurah(surahNumber, verseNumber);
+            searchResults.classList.remove('active');
+            searchInput.value = '';
+        });
+    });
+}
+
+// مستمعات الأحداث للبحث
+searchInput.addEventListener('input', (e) => {
+    if (e.target.value.length >= 3) {
+        searchQuran(e.target.value);
+    } else {
+        searchResults.classList.remove('active');
+    }
+});
+
+searchBtn.addEventListener('click', () => {
+    if (searchInput.value.length >= 3) {
+        searchQuran(searchInput.value);
+    }
+});
+
+// إخفاء نتائج البحث عند النقر خارجها
+document.addEventListener('click', (e) => {
+    if (!searchResults.contains(e.target) && !searchInput.contains(e.target)) {
+        searchResults.classList.remove('active');
+    }
+}); 
