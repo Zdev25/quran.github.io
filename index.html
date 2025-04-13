@@ -43,6 +43,13 @@
             <div class="verses-container" id="versesContainer">
                 <!-- سيتم ملء الآيات ديناميكياً -->
             </div>
+            <div id="tafseerModal" class="tafseer-modal">
+                <div class="tafseer-content">
+                    <h3 id="tafseerTitle">تفسير الآية</h3>
+                    <div id="tafseerText"></div>
+                    <button id="closeTafseer" class="close-btn">إغلاق</button>
+                </div>
+            </div>
         </div>
 
         <!-- شريط التحكم السفلي -->
@@ -83,15 +90,6 @@
                         </select>
                     </div>
                     <div class="settings-option">
-                        <label for="fontSize">حجم الخط:</label>
-                        <select id="fontSize">
-                            <option value="small">صغير</option>
-                            <option value="medium" selected>متوسط</option>
-                            <option value="large">كبير</option>
-                            <option value="xlarge">كبير جداً</option>
-                        </select>
-                    </div>
-                    <div class="settings-option">
                         <label for="playbackSpeed">سرعة التشغيل:</label>
                         <select id="playbackSpeed">
                             <option value="0.5">x0.5</option>
@@ -100,6 +98,11 @@
                             <option value="1.25">x1.25</option>
                             <option value="1.5">x1.5</option>
                         </select>
+                    </div>
+                    <div class="settings-option">
+                        <label for="volume">مستوى الصوت:</label>
+                        <input type="range" id="volume" min="0" max="100" value="100" step="1">
+                        <span id="volumeValue">100%</span>
                     </div>
                 </div>
                 <button id="closeSettings" class="close-btn">حفظ الإعدادات</button>
