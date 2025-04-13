@@ -81,6 +81,7 @@ body {
 }
 
 .verse {
+    position: relative;
     text-align: center;
     padding: 2rem;
     margin: 0 auto;
@@ -92,62 +93,82 @@ body {
 }
 
 .verse-text {
-    font-family: 'Uthmanic', 'Amiri', serif;
-    font-size: 11vw;
-    line-height: 2;
     text-align: center;
-    direction: rtl;
-    color: #000;
-    margin-bottom: 1.5rem;
-    word-wrap: break-word;
-    overflow-wrap: break-word;
+    line-height: 2;
+    margin: 1rem 0;
+    font-size: 32px;
+    font-family: 'Noto Naskh Arabic', serif;
 }
 
 /* شريط التحكم السفلي */
-.controls {
+.player-controls {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     background-color: #fff;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
     padding: 1rem;
+    z-index: 100;
+}
+
+.controls {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 1rem;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
+    gap: 2rem;
+    padding: 0.5rem;
 }
 
 .control-btn {
-    background-color: #2c3e50;
-    color: white;
+    background: none;
     border: none;
+    font-size: 2rem;
+    color: #2196F3;
+    cursor: pointer;
+    width: 60px;
+    height: 60px;
     border-radius: 50%;
-    width: 3rem;
-    height: 3rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
     transition: all 0.3s ease;
 }
 
 .control-btn:hover {
-    background-color: #34495e;
-    transform: translateY(-2px);
+    background-color: rgba(33, 150, 243, 0.1);
+    transform: scale(1.1);
 }
 
-.speed-select {
-    padding: 0.5rem;
-    border: 1px solid #2c3e50;
-    border-radius: 8px;
-    background-color: white;
-    color: #2c3e50;
-    font-size: 1rem;
+.control-btn:active {
+    transform: scale(0.95);
+}
+
+.control-btn.play-pause {
+    background-color: #2196F3;
+    color: white;
+    width: 70px;
+    height: 70px;
+}
+
+.control-btn.play-pause:hover {
+    background-color: #1976D2;
+}
+
+.progress-bar {
+    height: 6px;
+    background-color: #e0e0e0;
+    border-radius: 3px;
+    margin-bottom: 1rem;
     cursor: pointer;
-    outline: none;
-    transition: all 0.3s ease;
+}
+
+.progress {
+    height: 100%;
+    background-color: #2196F3;
+    border-radius: 3px;
+    width: 0;
+    transition: width 0.1s linear;
 }
 
 /* نافذة الإعدادات */
@@ -223,51 +244,203 @@ body {
     .verse {
         padding: 1.5rem;
         max-width: 95%;
+        margin: 1rem auto;
     }
     
     .verse-text {
-        font-size: 13vw;
+        font-size: 28px;
     }
     
     .controls {
-        padding: 0.75rem;
-    }
-    
-    .control-btn {
-        width: 2.5rem;
-        height: 2.5rem;
-    }
-}
-
-@media (max-width: 480px) {
-    .verse {
-        padding: 1rem;
-        max-width: 100%;
-    }
-    
-    .verse-text {
-        font-size: 14vw;
-    }
-    
-    .controls {
+        gap: 1rem;
         padding: 0.5rem;
     }
     
     .control-btn {
-        width: 2rem;
-        height: 2rem;
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
+    
+    .control-btn.play-pause {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .settings-content {
+        width: 95%;
+        padding: 1.5rem;
+    }
+    
+    .verse-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .info-item {
+        width: 100%;
+        justify-content: space-between;
     }
 }
 
-@media (min-width: 1200px) {
+@media (max-width: 480px) {
+    .app-header {
+        padding: 0.75rem;
+    }
+    
+    .verse {
+        padding: 1rem;
+        margin: 0.5rem auto;
+    }
+    
     .verse-text {
-        font-size: 9vw;
+        font-size: 24px;
+        line-height: 1.8;
+    }
+    
+    .controls {
+        gap: 0.75rem;
+    }
+    
+    .control-btn {
+        width: 45px;
+        height: 45px;
+        font-size: 1.25rem;
+    }
+    
+    .control-btn.play-pause {
+        width: 55px;
+        height: 55px;
+    }
+    
+    .settings-content {
+        padding: 1rem;
+    }
+    
+    .settings-option label {
+        font-size: 14px;
+    }
+    
+    .settings-option select {
+        padding: 0.5rem;
+        font-size: 14px;
+    }
+    
+    .tafseer-content {
+        width: 95%;
+        margin: 5% auto;
+        padding: 1rem;
+    }
+    
+    .verse-info {
+        font-size: 12px;
+        padding: 0.75rem;
     }
 }
 
-@media (min-width: 1600px) {
+@media (min-width: 769px) and (max-width: 1024px) {
+    .verse {
+        max-width: 85%;
+    }
+    
     .verse-text {
-        font-size: 8vw;
+        font-size: 30px;
+    }
+    
+    .controls {
+        gap: 1.5rem;
+    }
+    
+    .control-btn {
+        width: 55px;
+        height: 55px;
+        font-size: 1.75rem;
+    }
+    
+    .control-btn.play-pause {
+        width: 65px;
+        height: 65px;
+    }
+}
+
+@media (min-width: 1025px) {
+    .verse {
+        max-width: 80%;
+    }
+    
+    .verse-text {
+        font-size: 32px;
+    }
+    
+    .surahs-list {
+        width: 350px;
+    }
+}
+
+@media (min-width: 1440px) {
+    .verse {
+        max-width: 70%;
+    }
+    
+    .verse-text {
+        font-size: 36px;
+    }
+    
+    .surahs-list {
+        width: 400px;
+    }
+}
+
+/* تحسينات إضافية للتجاوب */
+.app-container {
+    padding-top: 4rem;
+    padding-bottom: 6rem;
+}
+
+.verses-container {
+    padding: 1rem;
+    min-height: calc(100vh - 10rem);
+}
+
+.player-controls {
+    height: auto;
+    min-height: 4rem;
+}
+
+.progress-bar {
+    margin: 0.5rem 0;
+}
+
+/* تحسين التجاوب للشاشات العالية */
+@media (min-height: 800px) {
+    .verse {
+        margin: 2rem auto;
+    }
+    
+    .verse-text {
+        margin: 2rem 0;
+    }
+}
+
+/* تحسين التجاوب للشاشات المنخفضة */
+@media (max-height: 600px) {
+    .app-container {
+        padding-top: 3.5rem;
+        padding-bottom: 5rem;
+    }
+    
+    .verse {
+        padding: 1rem;
+        margin: 0.5rem auto;
+    }
+    
+    .verse-text {
+        margin: 0.75rem 0;
+    }
+    
+    .player-controls {
+        min-height: 3.5rem;
     }
 }
 
@@ -493,4 +666,126 @@ body {
     font-size: 1.2rem;
     cursor: pointer;
     padding: 0.5rem;
+}
+
+.settings-option input[type="range"] {
+    width: 100%;
+    margin: 10px 0;
+}
+
+#volumeValue {
+    display: inline-block;
+    width: 50px;
+    text-align: center;
+    margin-right: 10px;
+}
+
+.tafseer-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+.tafseer-content {
+    position: relative;
+    background-color: white;
+    margin: 15% auto;
+    padding: 20px;
+    width: 80%;
+    max-width: 600px;
+    border-radius: 8px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.verse-controls {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.verse-btn {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.verse-btn:hover {
+    background-color: #45a049;
+}
+
+.verse-btn.tafseer {
+    background-color: #2196F3;
+}
+
+.verse-btn.tafseer:hover {
+    background-color: #1976D2;
+}
+
+#tafseerText {
+    margin-top: 15px;
+    line-height: 1.6;
+    text-align: justify;
+}
+
+.tafseer-icon-btn {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #2196F3;
+    cursor: pointer;
+    padding: 5px;
+    transition: transform 0.3s ease, color 0.3s ease;
+    z-index: 10;
+}
+
+.tafseer-icon-btn:hover {
+    transform: scale(1.2);
+    color: #1976D2;
+}
+
+.tafseer-icon-btn i {
+    filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.1));
+}
+
+.verse-info {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: rgba(0, 0, 0, 0.03);
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+    gap: 1rem;
+    font-size: 0.9rem;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.info-label {
+    color: #666;
+    font-weight: bold;
+}
+
+.info-value {
+    color: #2196F3;
+    font-weight: bold;
+} 
 } 
