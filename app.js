@@ -38,6 +38,7 @@ let autoPlayEnabled = false;
 let currentReciter = 'ar.alafasy';
 let currentWord = null;
 let currentAudio = null;
+let isAutoSwitch = false;
 
 // معرفات القراء
 const RECITERS = {
@@ -200,19 +201,27 @@ async function playCurrentVerse() {
     audio.volume = parseInt(savedVolume) / 100;
     
     try {
+        // إضافة مستمع حدث انتهاء الصوت قبل التشغيل
+        audio.addEventListener('ended', async () => {
+            console.log('Audio ended, autoSwitch:', isAutoSwitch); // للتأكد من حالة التبديل التلقائي
+            isPlaying = false;
+            updatePlayButton();
+            
+            if (isAutoSwitch) {
+                if (currentVerseIndex < currentSurah.ayahs.length - 1) {
+                    currentVerseIndex++;
+                    await displaySurah();
+                    await playCurrentVerse();
+                } else if (currentSurahIndex < surahs.length - 1) {
+                    currentSurahIndex++;
+                    await loadSurah(currentSurah.number + 1, 0);
+                }
+            }
+        });
+
         await audio.play();
         isPlaying = true;
         updatePlayButton();
-        
-        audio.addEventListener('ended', () => {
-            isPlaying = false;
-            updatePlayButton();
-            if (autoPlayEnabled) {
-                goToNextVerse();
-            }
-        });
-        
-        displaySurah();
     } catch (error) {
         console.error('Error playing verse:', error);
         isPlaying = false;
@@ -418,6 +427,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // تحميل الإعدادات المحفوظة
     loadLastPosition();
     initDarkMode();
+
+    // إضافة مستمع الحدث للشيك بوكس
+    const autoSwitchCheckbox = document.getElementById('autoSwitch');
+    if (autoSwitchCheckbox) {
+        autoSwitchCheckbox.addEventListener('change', function() {
+            isAutoSwitch = this.checked;
+            localStorage.setItem('autoSwitch', isAutoSwitch);
+            console.log('AutoSwitch changed:', isAutoSwitch); // للتأكد من تغيير الحالة
+        });
+    }
 });
 
 // حفظ الموقع قبل إغلاق الصفحة
@@ -581,13 +600,28 @@ function displayVerses(verses) {
 // تحديث دالة تحميل الإعدادات
 function loadSettings() {
     const settings = JSON.parse(localStorage.getItem('quranSettings')) || {};
+    
+    // تحميل إعداد القارئ
     selectedReciter = settings.reciter || 'ar.alafasy';
     document.getElementById('reciter').value = selectedReciter;
     
+    // تحميل إعداد مستوى الصوت
     const volume = settings.volume || 100;
     volumeSlider.value = volume;
     volumeValue.textContent = `${volume}%`;
-    audio.volume = volume / 100;
+    if (audio) {
+        audio.volume = volume / 100;
+    }
+    
+    // تحميل إعداد التبديل التلقائي
+    const savedAutoSwitch = localStorage.getItem('autoSwitch');
+    isAutoSwitch = savedAutoSwitch === 'true';
+    const autoSwitchCheckbox = document.getElementById('autoSwitch');
+    if (autoSwitchCheckbox) {
+        autoSwitchCheckbox.checked = isAutoSwitch;
+    }
+    
+    console.log('Settings loaded, autoSwitch:', isAutoSwitch); // للتأكد من تحميل الإعدادات
 }
 
 // تحديث دالة حفظ الإعدادات
@@ -597,6 +631,11 @@ function saveSettings() {
         volume: volumeSlider.value
     };
     localStorage.setItem('quranSettings', JSON.stringify(settings));
+    
+    // حفظ إعداد التبديل التلقائي
+    isAutoSwitch = document.getElementById('autoSwitch').checked;
+    localStorage.setItem('autoSwitch', isAutoSwitch);
+    console.log('Settings saved, autoSwitch:', isAutoSwitch); // للتأكد من حفظ الإعدادات
 }
 
 // تهيئة الوضع الليلي

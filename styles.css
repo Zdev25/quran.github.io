@@ -1195,4 +1195,69 @@
     body.dark-mode .tafseer-icon-btn:hover {
         background-color: var(--button-hover);
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
+
+    .settings-option .checkbox-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+    }
+
+    .settings-option .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+
+    .settings-option .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .settings-option .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+        border-radius: 34px;
+    }
+
+    .settings-option .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+        border-radius: 50%;
+    }
+
+    .settings-option input:checked + .slider {
+        background-color: var(--primary-color);
+    }
+
+    .settings-option input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+
+    /* تحسينات الوضع الليلي للشيك بوكس */
+    body.dark-mode .settings-option .slider {
+        background-color: #666;
+    }
+
+    body.dark-mode .settings-option .slider:before {
+        background-color: #fff;
+    }
+
+    body.dark-mode .settings-option input:checked + .slider {
+        background-color: var(--primary-color);
     } 
