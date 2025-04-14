@@ -193,6 +193,28 @@
         font-weight: 500;
     }
 
+    .verse-translation {
+        text-align: center;
+        margin: 1.5rem 0;
+        padding: 1.5rem;
+        font-size: 1.2rem;
+        margin: 1rem 0;
+        padding: 1rem;
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: var(--text-color);
+        font-family: 'Arial', sans-serif;
+        border-top: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+
+    body.dark-mode .verse-translation {
+        color: #e0e0e0;
+        background-color: rgba(255, 255, 255, 0.05);
+        border-color: var(--border-color);
+    }
+
     /* شريط التحكم السفلي */
     .player-controls {
         position: fixed;
@@ -266,15 +288,14 @@
 
     /* نافذة الإعدادات */
     .settings-modal {
-        display: none;
         position: fixed;
         top: 0;
         left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: var(--modal-bg);
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
         z-index: 1000;
-        backdrop-filter: blur(8px);
+        display: none;
     }
 
     .settings-modal.active {
@@ -284,165 +305,102 @@
     }
 
     .settings-content {
+        position: relative;
         background-color: var(--settings-bg);
-        padding: 2rem;
-        border-radius: 15px;
         width: 90%;
-        max-width: 500px;
-        box-shadow: 0 8px 32px var(--settings-shadow);
+        max-width: 400px;
+        height: 400px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
         border: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
     }
 
     .settings-options {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1rem;
+        padding-bottom: 0;
+    }
+
+    .settings-section {
         margin-bottom: 1.5rem;
+        padding: 0.8rem;
+        background-color: var(--settings-item-bg);
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+    }
+
+    .settings-section-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--primary-color);
+        margin-bottom: 0.8rem;
+        padding-bottom: 0.3rem;
+        border-bottom: 1px solid var(--primary-color);
     }
 
     .settings-option {
-        background-color: var(--settings-item-bg);
+        background-color: transparent;
+        padding: 0.6rem;
+        margin-bottom: 0.6rem;
+        border-radius: 6px;
         border: 1px solid var(--border-color);
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px var(--settings-shadow);
-        transition: all 0.3s ease;
-    }
-
-    .settings-option:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px var(--settings-shadow);
     }
 
     .settings-option label {
         display: block;
-        margin-bottom: 1rem;
+        margin-bottom: 0.3rem;
         color: var(--text-color);
-        font-weight: 600;
-        font-size: 1.1rem;
-    }
-
-    .settings-option select {
-        width: 100%;
-        padding: 0.75rem;
-        border: 1px solid var(--border-color);
-        border-radius: 8px;
-        background-color: var(--input-bg);
-        color: var(--input-text);
-        font-size: 1rem;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .settings-option select:hover {
-        border-color: var(--primary-color);
-        box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.1);
-    }
-
-    .settings-option input[type="range"] {
-        width: 100%;
-        margin: 10px 0;
-        accent-color: var(--primary-color);
-    }
-
-    #volumeValue {
-        display: inline-block;
-        min-width: 60px;
-        text-align: center;
-        padding: 6px 12px;
-        background-color: var(--input-bg);
-        color: var(--input-text);
-        border: 1px solid var(--border-color);
-        border-radius: 6px;
         font-weight: 500;
     }
 
     .close-btn {
+        position: sticky;
+        bottom: 0;
+        width: 100%;
+        padding: 0.8rem;
         background-color: var(--primary-color);
         color: white;
         border: none;
-        padding: 1rem;
-        border-radius: 8px;
-        width: 100%;
-        font-size: 1.1rem;
+        border-radius: 0 0 10px 10px;
+        font-size: 1rem;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.3s ease;
-        margin-top: 1.5rem;
-        box-shadow: 0 2px 8px var(--settings-shadow);
+        margin-top: auto;
     }
 
     .close-btn:hover {
         background-color: var(--button-hover);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px var(--settings-shadow);
     }
 
-    /* التجاوب */
+    /* تحسينات الوضع الليلي للإعدادات */
+    body.dark-mode .settings-content {
+        background-color: var(--settings-bg);
+        border-color: var(--border-color);
+    }
+
+    body.dark-mode .settings-option {
+        background-color: var(--settings-item-bg);
+        border-color: var(--border-color);
+    }
+
     @media (max-width: 768px) {
-        .surahs-list {
-            width: 100%;
-            transform: translateX(100%);
-            transition: transform 0.3s ease;
-        }
-        
-        .surahs-list.active {
-            transform: translateX(0);
-        }
-        
-        .surah-item {
-            padding: 1rem;
-            margin-bottom: 0.6rem;
-        }
-        
-        .surah-number {
-            width: 30px;
-            height: 30px;
-            font-size: 0.9rem;
-        }
-        
-        .surah-name {
-            font-size: 1rem;
-        }
-        
-        .verse {
-            padding: 1.5rem;
-            max-width: 95%;
-            margin: 1rem auto;
-        }
-        
-        .verse-text {
-            font-size: 28px;
-        }
-        
-        .controls {
-            gap: 1rem;
-            padding: 0.5rem;
-        }
-        
-        .control-btn {
-            width: 50px;
-            height: 50px;
-            font-size: 1.5rem;
-        }
-        
-        .control-btn.play-pause {
-            width: 60px;
-            height: 60px;
-        }
-        
         .settings-content {
             width: 95%;
-            padding: 1.5rem;
+            max-width: 350px;
+            height: 350px;
         }
         
-        .verse-info {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 0.5rem;
+        .settings-options {
+            padding: 0.8rem;
         }
         
-        .info-item {
-            width: 100%;
-            justify-content: space-between;
+        .settings-option {
+            padding: 0.6rem;
+            margin-bottom: 0.6rem;
         }
     }
 
@@ -1202,13 +1160,17 @@
         align-items: center;
         justify-content: space-between;
         margin-top: 0.5rem;
+        padding: 0.6rem;
+        background-color: transparent;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
     }
 
     .settings-option .switch {
         position: relative;
         display: inline-block;
-        width: 60px;
-        height: 34px;
+        width: 50px;
+        height: 24px;
     }
 
     .settings-option .switch input {
@@ -1225,19 +1187,19 @@
         right: 0;
         bottom: 0;
         background-color: #ccc;
-        transition: .4s;
-        border-radius: 34px;
+        transition: .3s;
+        border-radius: 24px;
     }
 
     .settings-option .slider:before {
         position: absolute;
         content: "";
-        height: 26px;
-        width: 26px;
-        left: 4px;
-        bottom: 4px;
+        height: 18px;
+        width: 18px;
+        left: 3px;
+        bottom: 3px;
         background-color: white;
-        transition: .4s;
+        transition: .3s;
         border-radius: 50%;
     }
 
@@ -1260,4 +1222,142 @@
 
     body.dark-mode .settings-option input:checked + .slider {
         background-color: var(--primary-color);
+    }
+
+    .settings-section {
+        background: var(--settings-item-bg);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
+
+    .settings-section:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .settings-section-title {
+        color: var(--text-color);
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .settings-option {
+        background: var(--bg-color);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 0.8rem 0;
+        transition: all 0.3s ease;
+    }
+
+    .settings-option:hover {
+        border-color: var(--primary-color);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .settings-option label {
+        display: block;
+        margin-bottom: 0.5rem;
+        color: var(--text-color);
+        font-weight: 500;
+    }
+
+    .settings-option select,
+    .settings-option input[type="range"] {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        background: var(--input-bg);
+        color: var(--text-color);
+        transition: all 0.3s ease;
+    }
+
+    .settings-option select:hover,
+    .settings-option input[type="range"]:hover {
+        border-color: var(--primary-color);
+    }
+
+    .checkbox-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .checkbox-container span {
+        color: var(--text-color);
+        font-weight: 500;
+    }
+
+    .close-btn {
+        background: var(--primary-color);
+        color: white;
+        padding: 0.8rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+        width: 100%;
+    }
+
+    .close-btn:hover {
+        background: var(--primary-color-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Dark mode adjustments */
+    [data-theme="dark"] .settings-section {
+        background: var(--settings-bg-dark);
+    }
+
+    [data-theme="dark"] .settings-option {
+        background: var(--bg-color-dark);
+    }
+
+    [data-theme="dark"] .settings-section-title {
+        color: var(--text-color-light);
+    }
+
+    /* تحسينات الوضع الليلي للأقسام */
+    body.dark-mode .settings-section {
+        background-color: rgba(255, 255, 255, 0.05);
+        border-color: var(--border-color);
+    }
+
+    body.dark-mode .settings-section-title {
+        color: var(--primary-color);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+
+    body.dark-mode .settings-option:hover {
+        background-color: rgba(255, 255, 255, 0.05);
+    }
+
+    /* تحسينات التجاوب للأقسام */
+    @media (max-width: 768px) {
+        .settings-section {
+            padding: 0.8rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .settings-section-title {
+            font-size: 1.1rem;
+            margin-bottom: 0.8rem;
+        }
+
+        .settings-option {
+            padding: 0.6rem;
+            margin-bottom: 0.6rem;
+        }
     } 

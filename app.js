@@ -25,6 +25,7 @@ const darkModeBtn = document.getElementById('darkModeBtn');
 const searchInput = document.getElementById('searchInput');
 const searchBtn = document.getElementById('searchBtn');
 const searchResults = document.getElementById('searchResults');
+const translationLanguageSelect = document.getElementById('translationLanguage');
 
 // متغيرات التطبيق
 let currentSurah = null;
@@ -38,26 +39,18 @@ let autoPlayEnabled = false;
 let currentReciter = 'ar.alafasy';
 let currentWord = null;
 let currentAudio = null;
-let isAutoSwitch = false;
+let isAutoSwitch = true;
+let showTranslation = true;
+let translationLanguage = 'en.sahih'; // اللغة الافتراضية
 
 // معرفات القراء
 const RECITERS = {
     'alafasy': 'ar.alafasy',
     'minshawi': 'ar.minshawi',
     'husary': 'ar.husary',
-    'abdulbasit': 'ar.abdulbasit',
-    'muaiqly': 'ar.maiqli',
     'sudais': 'ar.abdurrahmaansudais',
     'shatri': 'ar.shaatree',
-    'rifai': 'ar.hanirifai',
-    'shahriar': 'ar.parhizgar',
-    'hudhaify': 'ar.hudhaify',
-    'shuraym': 'ar.shuraym',
-    'basfar': 'ar.basfar',
-    'ajamy': 'ar.ajamy',
-    'ghamdi': 'ar.ghamdi',
-    'jibreel': 'ar.jibreel',
-    'jazaery': 'ar.jazaery'
+    'hudhaify': 'ar.hudhaify'
 };
 
 // تحميل السور عند بدء التطبيق
@@ -103,27 +96,56 @@ function displaySurahs() {
 // تحميل سورة محددة
 async function loadSurah(surahNumber, savedVerseIndex = 0) {
     try {
-        const response = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/${currentReciter}`);
+        const reciterId = RECITERS[reciterSelect.value] || 'ar.alafasy';
+        console.log('Loading surah with reciter:', reciterId);
+        
+        // تحقق من صحة رقم السورة
+        if (surahNumber < 1 || surahNumber > 114) {
+            throw new Error('رقم السورة غير صحيح');
+        }
+        
+        // جلب النص العربي
+        const response = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/${reciterId}`);
         const data = await response.json();
         
-        if (data.data) {
-            currentSurah = data.data;
-            currentSurahIndex = surahNumber - 1;
-            currentVerseIndex = savedVerseIndex;
-            displaySurah();
-            surahsList.classList.remove('active');
-            
-            // حفظ الموقع الحالي
-            saveCurrentPosition();
-            
-            // إذا كان هناك صوت يعمل، قم بتحديثه
-            if (isPlaying) {
-                playCurrentVerse();
-            }
+        if (!data.data) {
+            throw new Error('لم يتم العثور على بيانات السورة');
         }
+        
+        // جلب الترجمة بناءً على اللغة المختارة
+        const translationResponse = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/${translationLanguage}`);
+        const translationData = await translationResponse.json();
+        
+        currentSurah = data.data;
+        currentSurahIndex = surahNumber - 1;
+        currentVerseIndex = savedVerseIndex;
+        
+        // التحقق من صحة مؤشر الآية
+        if (currentVerseIndex >= currentSurah.ayahs.length) {
+            currentVerseIndex = 0;
+        }
+        
+        // إضافة الترجمة إلى بيانات السورة
+        if (translationData.data && translationData.data.ayahs) {
+            currentSurah.ayahs.forEach((ayah, index) => {
+                if (translationData.data.ayahs[index]) {
+                    ayah.translation = translationData.data.ayahs[index].text;
+                }
+            });
+        }
+        
+        displaySurah();
+        surahsList.classList.remove('active');
+        saveCurrentPosition();
+        
+        if (isPlaying) {
+            await playCurrentVerse();
+        }
+        
     } catch (error) {
         console.error('Error loading surah:', error);
-        versesContainer.innerHTML = '<div class="error">حدث خطأ في تحميل السورة. يرجى المحاولة مرة أخرى.</div>';
+        console.log('Current reciter:', reciterId);
+        versesContainer.innerHTML = `<div class="error">حدث خطأ في تحميل السورة: ${error.message}</div>`;
     }
 }
 
@@ -143,8 +165,11 @@ async function displaySurah() {
     verseText.className = 'verse-text';
     verseText.innerHTML = currentSurah.ayahs[currentVerseIndex].text;
     
-    // تعيين حجم الخط المتوسط
-    verseText.style.fontSize = '32px';
+    // إضافة الترجمة الإنجليزية
+    const translationElement = document.createElement('div');
+    translationElement.className = 'verse-translation';
+    translationElement.textContent = currentSurah.ayahs[currentVerseIndex].translation || 'Translation not available';
+    translationElement.style.display = showTranslation ? 'block' : 'none';
     
     // إضافة معلومات الآية
     const verseInfo = document.createElement('div');
@@ -176,6 +201,7 @@ async function displaySurah() {
     // تجميع العناصر
     verseElement.appendChild(tafseerButton);
     verseElement.appendChild(verseText);
+    verseElement.appendChild(translationElement);
     verseElement.appendChild(verseInfo);
     versesContainer.appendChild(verseElement);
     
@@ -437,6 +463,30 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('AutoSwitch changed:', isAutoSwitch); // للتأكد من تغيير الحالة
         });
     }
+
+    // إضافة مستمع الحدث لزر إظهار/إخفاء الترجمة
+    const showTranslationCheckbox = document.getElementById('showTranslation');
+    if (showTranslationCheckbox) {
+        showTranslationCheckbox.addEventListener('change', function() {
+            showTranslation = this.checked;
+            localStorage.setItem('showTranslation', showTranslation);
+            console.log('ShowTranslation changed:', showTranslation);
+            
+            // تحديث عرض الترجمة مباشرة
+            const translationElements = document.querySelectorAll('.verse-translation');
+            translationElements.forEach(element => {
+                element.style.display = showTranslation ? 'block' : 'none';
+            });
+        });
+    }
+
+    if (translationLanguageSelect) {
+        translationLanguageSelect.addEventListener('change', function() {
+            translationLanguage = this.value;
+            localStorage.setItem('translationLanguage', translationLanguage);
+            console.log('Translation language changed:', translationLanguage);
+        });
+    }
 });
 
 // حفظ الموقع قبل إغلاق الصفحة
@@ -613,29 +663,53 @@ function loadSettings() {
         audio.volume = volume / 100;
     }
     
-    // تحميل إعداد التبديل التلقائي
+    // تحميل إعداد التبديل التلقائي - مفعل افتراضياً
     const savedAutoSwitch = localStorage.getItem('autoSwitch');
-    isAutoSwitch = savedAutoSwitch === 'true';
+    isAutoSwitch = savedAutoSwitch === null ? true : savedAutoSwitch === 'true';
     const autoSwitchCheckbox = document.getElementById('autoSwitch');
     if (autoSwitchCheckbox) {
         autoSwitchCheckbox.checked = isAutoSwitch;
     }
     
-    console.log('Settings loaded, autoSwitch:', isAutoSwitch); // للتأكد من تحميل الإعدادات
+    // تحميل إعداد إظهار الترجمة - مفعل افتراضياً
+    const savedShowTranslation = localStorage.getItem('showTranslation');
+    showTranslation = savedShowTranslation === null ? true : savedShowTranslation === 'true';
+    const showTranslationCheckbox = document.getElementById('showTranslation');
+    if (showTranslationCheckbox) {
+        showTranslationCheckbox.checked = showTranslation;
+    }
+    
+    // تحميل إعداد اللغة
+    translationLanguage = settings.translationLanguage || 'en.sahih';
+    document.getElementById('translationLanguage').value = translationLanguage;
+    
+    console.log('Settings loaded, autoSwitch:', isAutoSwitch, 'showTranslation:', showTranslation);
 }
 
 // تحديث دالة حفظ الإعدادات
 function saveSettings() {
     const settings = {
         reciter: selectedReciter,
-        volume: volumeSlider.value
+        volume: volumeSlider.value,
+        translationLanguage: translationLanguage // حفظ اللغة المختارة
     };
     localStorage.setItem('quranSettings', JSON.stringify(settings));
     
     // حفظ إعداد التبديل التلقائي
     isAutoSwitch = document.getElementById('autoSwitch').checked;
     localStorage.setItem('autoSwitch', isAutoSwitch);
-    console.log('Settings saved, autoSwitch:', isAutoSwitch); // للتأكد من حفظ الإعدادات
+    
+    // حفظ إعداد إظهار الترجمة
+    showTranslation = document.getElementById('showTranslation').checked;
+    localStorage.setItem('showTranslation', showTranslation);
+    
+    console.log('Settings saved, autoSwitch:', isAutoSwitch, 'showTranslation:', showTranslation);
+    
+    // تحديث عرض الترجمة
+    const translationElements = document.querySelectorAll('.verse-translation');
+    translationElements.forEach(element => {
+        element.style.display = showTranslation ? 'block' : 'none';
+    });
 }
 
 // تهيئة الوضع الليلي
@@ -719,4 +793,32 @@ document.addEventListener('click', (e) => {
     if (!searchResults.contains(e.target) && !searchInput.contains(e.target)) {
         searchResults.classList.remove('active');
     }
-}); 
+});
+
+async function loadVerse(verseNumber) {
+    try {
+        // جلب الآية بالعربية
+        const arabicResponse = await fetch(`https://api.alquran.cloud/v1/ayah/${verseNumber}/ar.alafasy`);
+        const arabicData = await arabicResponse.json();
+        
+        // جلب الترجمة الإنجليزية
+        const englishResponse = await fetch(`https://api.alquran.cloud/v1/ayah/${verseNumber}/en.sahih`);
+        const englishData = await englishResponse.json();
+        
+        if (arabicData.code === 200 && englishData.code === 200) {
+            const verse = arabicData.data;
+            const translation = englishData.data;
+            
+            document.querySelector('.verse-text').textContent = verse.text;
+            document.querySelector('.verse-translation').textContent = translation.text;
+            document.querySelector('.verse-number').textContent = verse.numberInSurah;
+            document.querySelector('.page-number').textContent = verse.page;
+            document.querySelector('.juz-number').textContent = verse.juz;
+            
+            currentVerse = verseNumber;
+            saveCurrentPosition();
+        }
+    } catch (error) {
+        console.error('Error loading verse:', error);
+    }
+} 
