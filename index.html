@@ -140,12 +140,34 @@
                         </div>
                         <div class="settings-option">
                             <div class="checkbox-container">
-                                <span>إظهار الترجمة الإنجليزية</span>
+                                <span>إظهار الترجمة</span>
                                 <label class="switch">
                                     <input type="checkbox" id="showTranslation" checked>
                                     <span class="slider"></span>
                                 </label>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- قسم إعدادات الترجمات والتفاسير -->
+                    <div class="settings-section">
+                        <h3 class="settings-section-title">إعدادات الترجمات والتفاسير</h3>
+                        <div class="settings-option">
+                            <label for="translationLanguage">اختر الترجمة:</label>
+                            <select id="translationLanguage">
+                                <option value="en.sahih">Sahih International (English)</option>
+                                <option value="ur.junagarhi">جوناگڑھی (أردو)</option>
+                                <option value="fr.hamidullah">Hamidullah (French)</option>
+                                <option value="id.indonesian">Indonesian</option>
+                            </select>
+                        </div>
+                        <div class="settings-option">
+                            <label for="tafseerLanguage">اختر التفسير:</label>
+                            <select id="tafseerLanguage">
+                                <option value="ar.muyassar">التفسير الميسر</option>
+                                <option value="ar.jalalayn">تفسير الجلالين</option>
+                                <option value="en.sahih">Sahih International (English)</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -155,5 +177,16 @@
     </div>
 
     <script src="app.js"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(registration => {
+                    console.log('Service Worker registered with scope:', registration.scope);
+                })
+                .catch(error => {
+                    console.error('Service Worker registration failed:', error);
+                });
+        }
+    </script>
 </body>
-</html> 
+</html>

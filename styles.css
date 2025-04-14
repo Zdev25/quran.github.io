@@ -1,4 +1,4 @@
-    /* التنسيقات العامة */
+/* التنسيقات العامة */
     * {
         margin: 0;
         padding: 0;
@@ -1116,6 +1116,10 @@
     }
 
     .tafseer-icon-btn {
+        position: absolute;
+        top: -20px; /* Move above the verse box */
+        left: 50%; /* Center horizontally */
+        transform: translateX(-50%);
         background-color: var(--primary-color);
         color: white;
         border: none;
@@ -1128,9 +1132,6 @@
         cursor: pointer;
         transition: all 0.3s ease;
         box-shadow: 0 2px 5px var(--settings-shadow);
-        position: absolute;
-        top: 1rem;
-        left: 1rem;
         z-index: 10;
     }
 
@@ -1159,11 +1160,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-top: 0.5rem;
-        padding: 0.6rem;
-        background-color: transparent;
-        border: 1px solid var(--border-color);
-        border-radius: 6px;
+        gap: 1rem;
     }
 
     .settings-option .switch {
@@ -1360,4 +1357,36 @@
             padding: 0.6rem;
             margin-bottom: 0.6rem;
         }
-    } 
+    }
+
+    /* تنسيقات زر التفسير بجانب الآية */
+    .ayah-container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between; /* لضمان توزيع العناصر بالتساوي */
+    }
+
+    .ayah-text {
+        flex: 1; /* لجعل النص يأخذ المساحة المتبقية */
+        margin-right: 10px; /* إضافة مسافة بين النص والزر */
+    }
+
+    .tafsir-button {
+        flex-shrink: 0; /* منع الزر من التقلص */
+        margin-left: 10px; /* إضافة مسافة بين الزر والنص */
+        /* ...existing code for button styling... */
+    }
+
+    /* زر الإشارة المرجعية */
+    .bookmark-btn {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--primary-color);
+        transition: color 0.3s;
+    }
+
+    .bookmark-btn:hover {
+        color: var(--button-hover);
+    }

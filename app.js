@@ -1,4 +1,13 @@
 // العناصر الرئيسية في الصفحة
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then(reg => console.log('✅ Service Worker registered:', reg))
+            .catch(err => console.error('❌ Service Worker registration failed:', err));
+    });
+}
+
 const surahsList = document.getElementById('surahsList');
 const surahContent = document.getElementById('surahContent');
 const versesContainer = document.getElementById('versesContainer');
@@ -26,6 +35,7 @@ const searchInput = document.getElementById('searchInput');
 const searchBtn = document.getElementById('searchBtn');
 const searchResults = document.getElementById('searchResults');
 const translationLanguageSelect = document.getElementById('translationLanguage');
+const tafseerLanguageSelect = document.getElementById('tafseerLanguage');
 
 // متغيرات التطبيق
 let currentSurah = null;
@@ -42,6 +52,16 @@ let currentAudio = null;
 let isAutoSwitch = true;
 let showTranslation = true;
 let translationLanguage = 'en.sahih'; // اللغة الافتراضية
+let tafseerLanguage = 'ar.muyassar'; // اللغة الافتراضية للتفسير
+let isAutoPlay = true; // القراءة التلقائية مفعلة افتراضيًا
+
+// Ensure isAutoPlay is initialized correctly
+const savedAutoPlay = localStorage.getItem('autoPlay');
+isAutoPlay = savedAutoPlay === null ? true : savedAutoPlay === 'true';
+let autoPlayCheckbox = document.getElementById('autoPlay');
+if (autoPlayCheckbox) {
+    autoPlayCheckbox.checked = isAutoPlay;
+}
 
 // معرفات القراء
 const RECITERS = {
@@ -56,30 +76,38 @@ const RECITERS = {
 // تحميل السور عند بدء التطبيق
 async function loadSurahs() {
     try {
-        const response = await fetch('https://api.alquran.cloud/v1/surah');
-        const data = await response.json();
-        if (data.data) {
-            surahs = data.data;
-            displaySurahs();
-            
-            // تحميل آخر موقع محفوظ
-            const savedPosition = localStorage.getItem('quranPosition');
-            if (savedPosition) {
-                const position = JSON.parse(savedPosition);
-                currentSurahIndex = position.surahNumber - 1;
-                currentVerseIndex = position.verseIndex;
-                await loadSurah(position.surahNumber, position.verseIndex);
-            } else {
-                currentSurahIndex = 0;
-                currentVerseIndex = 0;
-                await loadSurah(1, 0); // تحميل سورة الفاتحة افتراضياً
-            }
+      // محاولة جلب من الكاش المحلي أولاً
+      const cachedSurahs = localStorage.getItem('cachedSurahs');
+      if (cachedSurahs) {
+        surahs = JSON.parse(cachedSurahs);
+        displaySurahs();
+      }
+  
+      // ثم جلبها من الإنترنت وتحديث الكاش
+      const response = await fetch('https://api.alquran.cloud/v1/surah');
+      const data = await response.json();
+      if (data.data) {
+        surahs = data.data;
+        displaySurahs();
+        localStorage.setItem('cachedSurahs', JSON.stringify(surahs));
+  
+        // تحميل الموقع المحفوظ
+        const savedPosition = localStorage.getItem('quranPosition');
+        if (savedPosition) {
+          const position = JSON.parse(savedPosition);
+          currentSurahIndex = position.surahNumber - 1;
+          currentVerseIndex = position.verseIndex;
+          await loadSurah(position.surahNumber, position.verseIndex);
+        } else {
+          await loadSurah(1, 0);
         }
+      }
     } catch (error) {
-        console.error('Error loading surahs:', error);
-        surahsList.innerHTML = '<div class="error">حدث خطأ في تحميل السور. يرجى المحاولة مرة أخرى.</div>';
+      console.error('Error loading surahs:', error);
+      surahsList.innerHTML = '<div class="error">حدث خطأ في تحميل السور. يرجى المحاولة مرة أخرى.</div>';
     }
-}
+  }
+  
 
 // عرض السور في القائمة
 function displaySurahs() {
@@ -115,6 +143,10 @@ async function loadSurah(surahNumber, savedVerseIndex = 0) {
         // جلب الترجمة بناءً على اللغة المختارة
         const translationResponse = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/${translationLanguage}`);
         const translationData = await translationResponse.json();
+
+        // جلب التفسير بناءً على اللغة المختارة
+        const tafseerResponse = await fetch(`https://api.alquran.cloud/v1/surah/${surahNumber}/${tafseerLanguage}`);
+        const tafseerData = await tafseerResponse.json();
         
         currentSurah = data.data;
         currentSurahIndex = surahNumber - 1;
@@ -125,11 +157,14 @@ async function loadSurah(surahNumber, savedVerseIndex = 0) {
             currentVerseIndex = 0;
         }
         
-        // إضافة الترجمة إلى بيانات السورة
+        // إضافة الترجمة والتفسير إلى بيانات السورة
         if (translationData.data && translationData.data.ayahs) {
             currentSurah.ayahs.forEach((ayah, index) => {
                 if (translationData.data.ayahs[index]) {
                     ayah.translation = translationData.data.ayahs[index].text;
+                }
+                if (tafseerData.data && tafseerData.data.ayahs[index]) {
+                    ayah.tafseer = tafseerData.data.ayahs[index].text;
                 }
             });
         }
@@ -160,6 +195,16 @@ async function displaySurah() {
     const verseElement = document.createElement('div');
     verseElement.className = 'verse current-verse';
     
+    // إضافة زر التفسير
+    const tafseerButton = document.createElement('button');
+    tafseerButton.className = 'tafseer-icon-btn';
+    tafseerButton.innerHTML = '<i class="fas fa-question-circle"></i>';
+    tafseerButton.title = 'عرض تفسير الآية';
+    tafseerButton.addEventListener('click', () => {
+        showTafseer(currentSurah.ayahs[currentVerseIndex].number);
+    });
+    verseElement.appendChild(tafseerButton);
+    
     // إضافة نص الآية
     const verseText = document.createElement('div');
     verseText.className = 'verse-text';
@@ -189,17 +234,7 @@ async function displaySurah() {
         </div>
     `;
     
-    // إضافة زر التفسير
-    const tafseerButton = document.createElement('button');
-    tafseerButton.className = 'tafseer-icon-btn';
-    tafseerButton.innerHTML = '<i class="fas fa-question-circle"></i>';
-    tafseerButton.title = 'عرض تفسير الآية';
-    tafseerButton.addEventListener('click', () => {
-        showTafseer(currentSurah.ayahs[currentVerseIndex].number);
-    });
-    
     // تجميع العناصر
-    verseElement.appendChild(tafseerButton);
     verseElement.appendChild(verseText);
     verseElement.appendChild(translationElement);
     verseElement.appendChild(verseInfo);
@@ -212,28 +247,26 @@ async function displaySurah() {
 // تشغيل الآية الحالية
 async function playCurrentVerse() {
     if (!currentSurah || !currentSurah.ayahs[currentVerseIndex]) return;
-    
+
     stopAllAudio();
-    
+
     const verse = currentSurah.ayahs[currentVerseIndex];
     audio = new Audio(verse.audio);
-    
+
     // تطبيق سرعة التشغيل المحفوظة
     const savedSpeed = localStorage.getItem('playbackSpeed') || '1';
     audio.playbackRate = parseFloat(savedSpeed);
-    
+
     // تطبيق مستوى الصوت المحفوظ
     const savedVolume = localStorage.getItem('volume') || '100';
     audio.volume = parseInt(savedVolume) / 100;
-    
+
     try {
-        // إضافة مستمع حدث انتهاء الصوت قبل التشغيل
         audio.addEventListener('ended', async () => {
-            console.log('Audio ended, autoSwitch:', isAutoSwitch); // للتأكد من حالة التبديل التلقائي
             isPlaying = false;
             updatePlayButton();
-            
-            if (isAutoSwitch) {
+
+            if (isAutoSwitch && isAutoPlay) { // Ensure auto-play is respected
                 if (currentVerseIndex < currentSurah.ayahs.length - 1) {
                     currentVerseIndex++;
                     await displaySurah();
@@ -355,6 +388,16 @@ playPause.addEventListener('click', () => {
     }
 });
 
+// إضافة مستمع الحدث للشيك بوكس القراءة التلقائية
+let autoPlayCheckbox2 = document.getElementById('autoPlay');
+if (autoPlayCheckbox2) {
+    autoPlayCheckbox2.addEventListener('change', function() {
+        isAutoPlay = this.checked;
+        localStorage.setItem('autoPlay', isAutoPlay);
+        console.log('AutoPlay changed:', isAutoPlay); // للتأكد من تغيير الحالة
+    });
+}
+
 // تحديث الإعدادات
 function updateSettings() {
     // إيقاف الصوت عند فتح الإعدادات
@@ -376,6 +419,10 @@ function updateSettings() {
         audio.volume = volume / 100;
     }
     
+    // تحديث القراءة التلقائية
+    isAutoPlay = document.getElementById('autoPlay').checked;
+    localStorage.setItem('autoPlay', isAutoPlay);
+
     // إعادة تحميل السورة مع الحفاظ على الموضع الحالي
     if (currentSurah) {
         loadSurah(currentSurah.number, currentVerseIndex);
@@ -470,8 +517,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showTranslationCheckbox.addEventListener('change', function() {
             showTranslation = this.checked;
             localStorage.setItem('showTranslation', showTranslation);
-            console.log('ShowTranslation changed:', showTranslation);
-            
+
             // تحديث عرض الترجمة مباشرة
             const translationElements = document.querySelectorAll('.verse-translation');
             translationElements.forEach(element => {
@@ -480,13 +526,40 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const savedShowTranslation = localStorage.getItem('showTranslation');
+    showTranslation = savedShowTranslation === null ? true : savedShowTranslation === 'true';
+    if (showTranslationCheckbox) {
+        showTranslationCheckbox.checked = showTranslation;
+    }
+
+    const translationElements = document.querySelectorAll('.verse-translation');
+    translationElements.forEach(element => {
+        element.style.display = showTranslation ? 'block' : 'none';
+    });
+
     if (translationLanguageSelect) {
         translationLanguageSelect.addEventListener('change', function() {
             translationLanguage = this.value;
             localStorage.setItem('translationLanguage', translationLanguage);
-            console.log('Translation language changed:', translationLanguage);
+            loadSurah(currentSurah.number, currentVerseIndex);
         });
     }
+
+    if (tafseerLanguageSelect) {
+        tafseerLanguageSelect.addEventListener('change', function() {
+            tafseerLanguage = this.value;
+            localStorage.setItem('tafseerLanguage', tafseerLanguage);
+            loadSurah(currentSurah.number, currentVerseIndex);
+        });
+    }
+
+    const savedTafseerLanguage = localStorage.getItem('tafseerLanguage') || 'ar.muyassar';
+    tafseerLanguage = savedTafseerLanguage;
+    if (tafseerLanguageSelect) {
+        tafseerLanguageSelect.value = savedTafseerLanguage;
+    }
+
+    requestNotificationPermission();
 });
 
 // حفظ الموقع قبل إغلاق الصفحة
@@ -510,6 +583,58 @@ function getFontSize(size) {
 
 // بدء التطبيق
 loadSurahs();
+
+// Swipe Navigation
+let touchStartX1 = 0;
+let touchEndX1 = 0;
+
+function handleTouchStart(event) {
+    touchStartX1 = event.changedTouches[0].screenX;
+}
+
+function handleTouchEnd(event) {
+    touchEndX1 = event.changedTouches[0].screenX;
+    if (touchEndX1 < touchStartX1 - 50) {
+        goToNextVerse();
+    } else if (touchEndX1 > touchStartX1 + 50) {
+        goToPreviousVerse();
+    }
+}
+
+document.addEventListener('touchstart', handleTouchStart);
+document.addEventListener('touchend', handleTouchEnd);
+
+// Daily Reminder
+function requestNotificationPermission() {
+    if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                scheduleDailyReminder();
+            }
+        });
+    }
+}
+
+function scheduleDailyReminder() {
+    const now = new Date();
+    const reminderTime = new Date();
+    reminderTime.setHours(8, 0, 0, 0); // Daily reminder at 8 AM
+
+    const timeUntilReminder = reminderTime - now;
+    if (timeUntilReminder > 0) {
+        setTimeout(() => {
+            new Notification('📖 تذكير', {
+                body: 'لا تنس قراءة وردك اليومي من القرآن الكريم.',
+            });
+            scheduleDailyReminder(); // Reschedule for the next day
+        }, timeUntilReminder);
+    }
+}
+
+// Initialize features
+document.addEventListener('DOMContentLoaded', () => {
+    requestNotificationPermission();
+});
 
 async function playVerse(verseNumber, speed = 'normal') {
     try {
@@ -595,7 +720,7 @@ closeTafseer.addEventListener('click', () => {
 // دالة عرض التفسير
 async function showTafseer(verseKey) {
     try {
-        const response = await fetch(`https://api.alquran.cloud/v1/ayah/${verseKey}/ar.muyassar`);
+        const response = await fetch(`https://api.alquran.cloud/v1/ayah/${verseKey}/${tafseerLanguage}`);
         const data = await response.json();
         if (data.code === 200 && data.data) {
             const tafseer = data.data.text || 'التفسير غير متوفر';
@@ -612,7 +737,68 @@ async function showTafseer(verseKey) {
     }
 }
 
-// تحديث دالة عرض الآيات لإضافة زر التفسير
+// إضافة مستمع الحدث لتغيير لغة التفسير
+if (tafseerLanguageSelect) {
+    tafseerLanguageSelect.addEventListener('change', function () {
+        tafseerLanguage = this.value;
+        localStorage.setItem('tafseerLanguage', tafseerLanguage);
+        console.log('Tafseer language changed:', tafseerLanguage);
+    });
+}
+
+// تحسين التفاعل باللمس
+let touchStartX2 = 0;
+let touchEndX2 = 0;
+
+function handleTouchStart(event) {
+    touchStartX2 = event.changedTouches[0].screenX;
+}
+
+function handleTouchEnd(event) {
+    touchEndX2 = event.changedTouches[0].screenX;
+    if (touchEndX2 < touchStartX2 - 50) {
+        goToNextVerse();
+    } else if (touchEndX2 > touchStartX2 + 50) {
+        goToPreviousVerse();
+    }
+}
+
+document.addEventListener('touchstart', handleTouchStart);
+document.addEventListener('touchend', handleTouchEnd);
+
+// ورد يومي / تذكير بالقراءة
+function requestNotificationPermission() {
+    if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                scheduleDailyReminder();
+            }
+        });
+    }
+}
+
+function scheduleDailyReminder() {
+    const now = new Date();
+    const reminderTime = new Date();
+    reminderTime.setHours(8, 0, 0, 0); // تذكير يومي الساعة 8 صباحًا
+
+    const timeUntilReminder = reminderTime - now;
+    if (timeUntilReminder > 0) {
+        setTimeout(() => {
+            new Notification('📖 تذكير', {
+                body: 'لا تنس قراءة وردك اليومي من القرآن الكريم.',
+            });
+            scheduleDailyReminder(); // إعادة جدولة التذكير لليوم التالي
+        }, timeUntilReminder);
+    }
+}
+
+// استدعاء التذكير عند تحميل الصفحة
+document.addEventListener('DOMContentLoaded', () => {
+    requestNotificationPermission();
+});
+
+// تحديث عرض الآيات لإضافة زر المفضلة
 function displayVerses(verses) {
     versesContainer.innerHTML = '';
     verses.forEach((verse, index) => {
@@ -671,6 +857,14 @@ function loadSettings() {
         autoSwitchCheckbox.checked = isAutoSwitch;
     }
     
+    // تحميل إعداد القراءة التلقائية - مفعل افتراضياً
+    const savedAutoPlay = localStorage.getItem('autoPlay');
+    isAutoPlay = savedAutoPlay === null ? true : savedAutoPlay === 'true';
+    const autoPlayCheckbox = document.getElementById('autoPlay');
+    if (autoPlayCheckbox) {
+        autoPlayCheckbox.checked = isAutoPlay;
+    }
+    
     // تحميل إعداد إظهار الترجمة - مفعل افتراضياً
     const savedShowTranslation = localStorage.getItem('showTranslation');
     showTranslation = savedShowTranslation === null ? true : savedShowTranslation === 'true';
@@ -698,6 +892,10 @@ function saveSettings() {
     // حفظ إعداد التبديل التلقائي
     isAutoSwitch = document.getElementById('autoSwitch').checked;
     localStorage.setItem('autoSwitch', isAutoSwitch);
+    
+    // حفظ إعداد القراءة التلقائية
+    isAutoPlay = document.getElementById('autoPlay').checked;
+    localStorage.setItem('autoPlay', isAutoPlay);
     
     // حفظ إعداد إظهار الترجمة
     showTranslation = document.getElementById('showTranslation').checked;
@@ -815,10 +1013,10 @@ async function loadVerse(verseNumber) {
             document.querySelector('.page-number').textContent = verse.page;
             document.querySelector('.juz-number').textContent = verse.juz;
             
-            currentVerse = verseNumber;
+            playCurrentVerse(verse.number);
             saveCurrentPosition();
         }
     } catch (error) {
         console.error('Error loading verse:', error);
     }
-} 
+}
