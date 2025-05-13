@@ -1,48 +1,46 @@
-const CACHE_NAME = 'quran-app-cache-v1';
+// 📦 Service Worker لتطبيق القرآن الكريم
+const CACHE_NAME = 'quran-app-v1';
+const OFFLINE_URL = '/index.html';
+
 const FILES_TO_CACHE = [
   '/',
   '/index.html',
   '/styles.css',
   '/app.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css',
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png'
 ];
 
-// تثبيت الكاش عند أول زيارة
 self.addEventListener('install', (event) => {
-  console.log('[ServiceWorker] Install');
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(FILES_TO_CACHE);
     })
   );
+  self.skipWaiting();
 });
 
-// تفعيل الكاش وتحديث النسخة القديمة
 self.addEventListener('activate', (event) => {
-  console.log('[ServiceWorker] Activate');
   event.waitUntil(
-    caches.keys().then((keyList) =>
-      Promise.all(
+    caches.keys().then((keyList) => {
+      return Promise.all(
         keyList.map((key) => {
           if (key !== CACHE_NAME) {
             return caches.delete(key);
           }
         })
-      )
-    )
-  );
-});
-
-// التعامل مع الطلبات
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      return (
-        cachedResponse ||
-        fetch(event.request).catch(() =>
-          caches.match('/index.html') // في حالة فقد الاتصال
-        )
       );
     })
   );
+  self.clients.claim();
 });
+
+self.addEventListener('fetch', (event) => {
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request).catch(() => caches.match(OFFLINE_URL));
+    })
+  );
+});
+  

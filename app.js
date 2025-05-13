@@ -73,6 +73,15 @@ const RECITERS = {
     'hudhaify': 'ar.hudhaify'
 };
 
+// إضافة خيارات الخط
+const FONT_OPTIONS = {
+    'uthmani': 'الخط العثماني',
+    'naskh': 'الخط النسخ',
+    'amiri': 'خط أميري',
+    'lateef': 'خط لطيف',
+    'scheherazade': 'خط شهرزاد'
+};
+
 // تحميل السور عند بدء التطبيق
 async function loadSurahs() {
     try {
@@ -123,6 +132,7 @@ function displaySurahs() {
 
 // تحميل سورة محددة
 async function loadSurah(surahNumber, savedVerseIndex = 0) {
+    stopAllAudio();
     try {
         const reciterId = RECITERS[reciterSelect.value] || 'ar.alafasy';
         console.log('Loading surah with reciter:', reciterId);
@@ -172,10 +182,8 @@ async function loadSurah(surahNumber, savedVerseIndex = 0) {
         displaySurah();
         surahsList.classList.remove('active');
         saveCurrentPosition();
-        
-        if (isPlaying) {
-            await playCurrentVerse();
-        }
+        playCurrentVerse();
+
         
     } catch (error) {
         console.error('Error loading surah:', error);
@@ -423,9 +431,14 @@ function updateSettings() {
     isAutoPlay = document.getElementById('autoPlay').checked;
     localStorage.setItem('autoPlay', isAutoPlay);
 
-    // إعادة تحميل السورة مع الحفاظ على الموضع الحالي
+    // إعادة تحميل السورة الحالية مع القارئ الجديد
     if (currentSurah) {
-        loadSurah(currentSurah.number, currentVerseIndex);
+        const wasPlaying = isPlaying;
+        loadSurah(currentSurah.number, currentVerseIndex).then(() => {
+            if (wasPlaying) {
+                playCurrentVerse();
+            }
+        });
     }
 }
 
@@ -757,9 +770,9 @@ function handleTouchStart(event) {
 function handleTouchEnd(event) {
     touchEndX2 = event.changedTouches[0].screenX;
     if (touchEndX2 < touchStartX2 - 50) {
-        goToNextVerse();
-    } else if (touchEndX2 > touchStartX2 + 50) {
         goToPreviousVerse();
+    } else if (touchEndX2 > touchStartX2 + 50) {
+        goToNextVerse();
     }
 }
 
@@ -877,6 +890,11 @@ function loadSettings() {
     translationLanguage = settings.translationLanguage || 'en.sahih';
     document.getElementById('translationLanguage').value = translationLanguage;
     
+    // تحميل إعداد الخط
+    const savedFont = settings.font || 'uthmani';
+    document.body.classList.add(`font-${savedFont}`);
+    document.getElementById('fontSelect').value = savedFont;
+    
     console.log('Settings loaded, autoSwitch:', isAutoSwitch, 'showTranslation:', showTranslation);
 }
 
@@ -885,7 +903,8 @@ function saveSettings() {
     const settings = {
         reciter: selectedReciter,
         volume: volumeSlider.value,
-        translationLanguage: translationLanguage // حفظ اللغة المختارة
+        translationLanguage: translationLanguage,
+        font: document.getElementById('fontSelect').value
     };
     localStorage.setItem('quranSettings', JSON.stringify(settings));
     
@@ -1020,3 +1039,18 @@ async function loadVerse(verseNumber) {
         console.error('Error loading verse:', error);
     }
 }
+
+// تغيير الخط
+const changeFont = (fontType) => {
+    // إزالة جميع فئات الخط
+    document.body.classList.remove('font-uthmani', 'font-naskh', 'font-amiri', 'font-lateef', 'font-scheherazade');
+    // إضافة الفئة الجديدة
+    document.body.classList.add(`font-${fontType}`);
+    // حفظ الإعدادات
+    saveSettings();
+};
+
+// إضافة مستمع الحدث لتغيير الخط
+document.getElementById('fontSelect').addEventListener('change', (e) => {
+    changeFont(e.target.value);
+});

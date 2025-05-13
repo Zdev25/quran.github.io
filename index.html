@@ -6,6 +6,13 @@
     <title>تطبيق القرآن الكريم</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4a90e2">
+    <!-- إضافة الخط العثماني -->
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Lateef:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Scheherazade:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="app-container">
@@ -80,9 +87,9 @@
                 <div class="progress" id="progressBar"></div>
             </div>
             <div class="controls">
-                <button id="prevVerse" class="control-btn"><i class="fas fa-step-backward"></i></button>
+                <button id="prevVerse" class="control-btn"><i class="fas fa-step-forward"></i></button>
                 <button id="playPause" class="control-btn"><i class="fas fa-play"></i></button>
-                <button id="nextVerse" class="control-btn"><i class="fas fa-step-forward"></i></button>
+                <button id="nextVerse" class="control-btn"><i class="fas fa-step-backward"></i></button>
             </div>
         </div>
 
@@ -94,7 +101,7 @@
                     <div class="settings-section">
                         <h3 class="settings-section-title">إعدادات القارئ</h3>
                         <div class="settings-option">
-                            <label for="reciter">اختر القارئ:</label>
+                            <label for="reciter"><small>(يحتاج الي تحديث الصفحة ليعمل التغير)</small> <br> اختر القارئ:</label>
                             <select id="reciter" class="settings-select">
                                 <option value="alafasy">مشاري العفاسي</option>
                                 <option value="minshawi">محمد صديق المنشاوي</option>
@@ -102,7 +109,7 @@
                                 <option value="sudais">عبد الرحمن السديس</option>
                                 <option value="shatri">أبو بكر الشاطري</option>
                                 <option value="hudhaify">علي الحذيفي</option>
-                            </select>
+                                </select>
                         </div>
                     </div>
 
@@ -156,9 +163,27 @@
                             <label for="translationLanguage">اختر الترجمة:</label>
                             <select id="translationLanguage">
                                 <option value="en.sahih">Sahih International (English)</option>
+                                <option value="en.pickthall">Pickthall (English)</option>
+                                <option value="en.yusufali">Yusuf Ali (English)</option>
+                                <option value="en.shakir">Shakir (English)</option>
                                 <option value="ur.junagarhi">جوناگڑھی (أردو)</option>
+                                <option value="ur.ahmedali">احمد علی (أردو)</option>
                                 <option value="fr.hamidullah">Hamidullah (French)</option>
+                                <option value="fr.muhammad">Muhammad Hamidullah (French)</option>
                                 <option value="id.indonesian">Indonesian</option>
+                                <option value="id.muntakhab">Muntakhab (Indonesian)</option>
+                                <option value="tr.diyanet">Diyanet (Turkish)</option>
+                                <option value="tr.yazir">Elmalılı (Turkish)</option>
+                                <option value="es.cortes">Cortes (Spanish)</option>
+                                <option value="es.garcia">Garcia (Spanish)</option>
+                                <option value="de.aburida">Abu Rida (German)</option>
+                                <option value="de.zaidan">Zaidan (German)</option>
+                                <option value="ru.kuliev">Kuliev (Russian)</option>
+                                <option value="ru.osmanov">Osmanov (Russian)</option>
+                                <option value="bn.bengali">Bengali</option>
+                                <option value="hi.hindi">Hindi</option>
+                                <option value="ms.basmeih">Basmeih (Malay)</option>
+                                <option value="ta.tamil">Tamil</option>
                             </select>
                         </div>
                         <div class="settings-option">
